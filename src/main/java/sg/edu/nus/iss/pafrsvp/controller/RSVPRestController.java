@@ -1,17 +1,23 @@
 package sg.edu.nus.iss.pafrsvp.controller;
 
+import java.util.List;
+
 import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
+import sg.edu.nus.iss.pafrsvp.model.AggregationRSVP;
 import sg.edu.nus.iss.pafrsvp.model.RSVP;
 import sg.edu.nus.iss.pafrsvp.service.RSVPService;
 
@@ -45,5 +51,21 @@ public class RSVPRestController {
                 .status(HttpStatus.CREATED)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(respResult.toString());
+    }
+
+    @GetMapping(path="/count")
+    public ResponseEntity<String> aggregateByFoodType(){
+        List<AggregationRSVP> ll = this.svc.aggregateByFoodType();
+        JsonArrayBuilder b = Json.createArrayBuilder();
+
+        for(AggregationRSVP l: ll){
+            b.add(l.toJSON());
+        }
+        JsonArray jArr = b.build();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(jArr.toString());
     }
 }

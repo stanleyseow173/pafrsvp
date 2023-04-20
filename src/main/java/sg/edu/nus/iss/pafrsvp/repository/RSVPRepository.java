@@ -4,14 +4,26 @@ import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import sg.edu.nus.iss.pafrsvp.model.AggregationRSVP;
 import sg.edu.nus.iss.pafrsvp.model.RSVP;
 import static sg.edu.nus.iss.pafrsvp.repository.Queries.*;
 
@@ -45,6 +57,34 @@ public class RSVPRepository {
         }
 
         return rsvp;
+    }
+
+    public List<AggregationRSVP> aggregateByFoodType(){
+        
+        ProjectionOperation pOp = Aggregation.project("name","foodType");
+        GroupOperation gOp = Aggregation.group("foodType")
+            .push("name")
+            .as("name")
+            .count().as("count");
+        
+        SortOperation sOp = Aggregation.sort(Sort.by(Direction.DESC,"count"));
+        
+        Aggregation pipeline = Aggregation.newAggregation(
+            pOp, gOp, sOp  
+        );
+        
+        AggregationResults<Document> aa = mongoTemplate.aggregate(pipeline, "rsvp", 
+                        Document.class);
+        
+        List<AggregationRSVP> lstAggrFt = new LinkedList<>();
+        Iterator<Document> id = aa.iterator();
+        while(id.hasNext()){
+            Document d1 = id.next();
+            lstAggrFt.add(AggregationRSVP.create(d1));
+        }
+
+
+        return lstAggrFt;
     }
 
 }
